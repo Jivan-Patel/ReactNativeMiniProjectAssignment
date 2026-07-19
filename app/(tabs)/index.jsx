@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { DrawerActions } from "@react-navigation/native";
 import { useNavigation } from "expo-router";
-import { MaterialIcons } from "@expo/vector-icons";
+import { MaterialIcons, MaterialCommunityIcons } from "@expo/vector-icons";
 
 const HomeScreen = () => {
   const navigation = useNavigation();
@@ -144,7 +144,8 @@ const HomeScreen = () => {
         </View>
 
         {/* Quick Action Cards */}
-        <View>
+        <View style={styles.quickActionContainer}>
+          <Text style={styles.sectionTitle}>Quick Actions</Text>
           <FlatList
             data={data.quickActions}
             keyExtractor={(item) => item.id.toString()}
@@ -153,9 +154,16 @@ const HomeScreen = () => {
             scrollEnabled={false}
             renderItem={({ item }) => (
               <Pressable
-                style={[styles.quickAction, { backgroundColor: item.color }]}
+                style={({ pressed }) => [
+                  styles.quickAction,
+                  { backgroundColor: item.color },
+                  pressed && { opacity: 0.85, transform: [{ scale: 0.97 }] }
+                ]}
                 onPress={() => router.push(`/${item.screen}`)}
               >
+                <View style={styles.iconContainer}>
+                  <MaterialCommunityIcons name={item.icon} size={32} color={item.color} />
+                </View>
                 <Text style={styles.actionTitle}>{item.title}</Text>
               </Pressable>
             )}
@@ -164,6 +172,7 @@ const HomeScreen = () => {
 
         {/* Recent Survey Summary */}
         <View>
+          <Text style={[{ paddingLeft: 20 }, styles.sectionTitle]}>Recent Survey</Text>
           <FlatList
             data={data.recentSurveys}
             keyExtractor={(item) => item.id}
@@ -241,29 +250,55 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
 
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: "800",
+    color: "#1E293B",
+    marginBottom: 15,
+    paddingHorizontal: 5,
+  },
+
+  quickActionContainer: {
+    marginHorizontal: 15,
+    marginTop: 25,
+  },
+
   row: {
     justifyContent: "space-between",
-    marginHorizontal: 15,
-    marginTop: 15,
   },
 
   quickAction: {
     width: "48%",
-    height: 120,
-    borderRadius: 15,
+    paddingVertical: 20,
+    paddingHorizontal: 16,
+    borderRadius: 24,
     justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 15,
-    elevation: 3,
+    alignItems: "flex-start",
+    marginBottom: 16,
+    elevation: 6,
+    shadowColor: "#000",
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 5 },
+  },
+
+  iconContainer: {
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    padding: 12,
+    borderRadius: 16,
+    marginBottom: 16,
     shadowColor: "#000",
     shadowOpacity: 0.08,
-    shadowRadius: 5,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 3,
   },
 
   actionTitle: {
-    color: "#fff",
+    color: "#ffffff",
     fontSize: 17,
-    fontWeight: "700",
+    fontWeight: "800",
+    letterSpacing: 0.5,
   },
 
   surveyCard: {
