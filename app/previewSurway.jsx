@@ -17,7 +17,7 @@ const SurveyPreview = () => {
     contact: "7896598976",
     location: "Kalol, Gujarat",
     notes: "Raste ka plot saste me",
-    photo: "https://picsum.photos/500/300",
+    photo: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRo62nXWlex-jhZQywWDtOOxLzIcUgR7HnI6pNKYNO73g&s=10",
   };
 
   const editSurvey = () => {
