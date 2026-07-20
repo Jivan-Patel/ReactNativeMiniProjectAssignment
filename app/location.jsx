@@ -26,6 +26,7 @@ const LocationScreen = () => {
 
       const reverseGeocode = await Location.reverseGeocodeAsync(currentLocation.coords);
       setAddress(reverseGeocode[0]);
+      console.log("Reverse Geocode Result:", reverseGeocode[0]);
 
 
     } catch (error) {
@@ -61,7 +62,6 @@ const LocationScreen = () => {
         <View style={style.infoBox}>
           <Text style={style.infoText}>Name: {address.name}</Text>
           <Text style={style.infoText}>City: {address.city}</Text>
-          <Text style={style.infoText}>State: {address.state}</Text>
           <Text style={style.infoText}>Country: {address.country}</Text>
         </View>
       )}
