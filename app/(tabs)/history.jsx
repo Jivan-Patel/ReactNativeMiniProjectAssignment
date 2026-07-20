@@ -1,78 +1,37 @@
-import React, { useEffect, useState } from "react";
-import {
-  View,
-  Text,
-  FlatList,
-  StyleSheet,
-  TextInput,
-  Pressable,
-  Alert,
-} from "react-native";
+import React, { useState, useEffect, useCallback } from "react";
+import { View, Text, FlatList, StyleSheet, TextInput, Pressable, Alert, } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const SurveyHistory = () => {
-  const [surveys, setSurveys] = useState([
-    {
-      id: "1",
-      site: "GIFT City Project",
-      client: "Rahul Patel",
-      priority: "High",
-      contact: "9876543210",
-      location: "Gandhinagar",
-      date: "19 Jul 2026",
-    },
-    {
-      id: "2",
-      site: "Sabarmati Riverfront",
-      client: "Priya Shah",
-      priority: "Medium",
-      contact: "9876501234",
-      location: "Ahmedabad",
-      date: "18 Jul 2026",
-    },
-    {
-      id: "3",
-      site: "Statue of Unity",
-      client: "Amit Kumar",
-      priority: "Low",
-      contact: "9876545678",
-      location: "Kevadia",
-      date: "17 Jul 2026",
-    },
-    {
-      id: "4",
-      site: "Surat Diamond Bourse",
-      client: "Neha Mehta",
-      priority: "High",
-      contact: "9876541111",
-      location: "Surat",
-      date: "16 Jul 2026",
-    },
-    {
-      id: "5",
-      site: "Dholera Smart City",
-      client: "Vikram Singh",
-      priority: "Medium",
-      contact: "9876542222",
-      location: "Dholera",
-      date: "15 Jul 2026",
-    },
-    {
-      id: "6",
-      site: "Atal Bridge",
-      client: "Karan Joshi",
-      priority: "Low",
-      contact: "9876543333",
-      location: "Ahmedabad",
-      date: "14 Jul 2026",
-    },
-  ]);
-
+  const [surveys, setSurveys] = useState([]);
   const [filteredSurveys, setFilteredSurveys] = useState([]);
   const [search, setSearch] = useState("");
   const [priority, setPriority] = useState("All");
 
+  useFocusEffect(
+    useCallback(() => {
+      const fetchSurveys = async () => {
+        try {
+          const storedSurveys = await AsyncStorage.getItem("surveys");
+
+          if (storedSurveys) {
+            const parsed = JSON.parse(storedSurveys);
+            setSurveys(parsed);
+          } else {
+            setSurveys([]);
+          }
+        } catch (error) {
+          console.log(error);
+        }
+      };
+
+      fetchSurveys();
+    }, [])
+  );
+
   useEffect(() => {
-    let data = surveys;
+    let data = [...surveys];
 
     if (priority !== "All") {
       data = data.filter((item) => item.priority === priority);
@@ -81,8 +40,15 @@ const SurveyHistory = () => {
     if (search.trim()) {
       data = data.filter(
         (item) =>
-          item.site.toLowerCase().includes(search.toLowerCase()) ||
-          item.client.toLowerCase().includes(search.toLowerCase())
+          item.siteName
+            .toLowerCase()
+            .includes(search.toLowerCase()) ||
+          item.client
+            .toLowerCase()
+            .includes(search.toLowerCase()) ||
+          item.surveyId
+            .toLowerCase()
+            .includes(search.toLowerCase())
       );
     }
 
@@ -92,16 +58,25 @@ const SurveyHistory = () => {
   const viewSurvey = (survey) => {
     Alert.alert(
       "Survey Details",
-      `Site: ${survey.site}
+      `Survey ID: ${survey.surveyId}
+
+Site: ${survey.siteName}
+
 Client: ${survey.client}
-Priority: ${survey.priority}
+
 Contact: ${survey.contact}
+
+Priority: ${survey.priority}
+
 Location: ${survey.location}
-Date: ${survey.date}`
+
+Notes: ${survey.notes}
+
+Date: ${new Date(survey.date).toLocaleDateString()}`
     );
   };
 
-  const deleteSurvey = (id) => {
+  const deleteSurvey = (surveyId) => {
     Alert.alert(
       "Delete Survey",
       "Are you sure you want to delete this survey?",
@@ -113,8 +88,17 @@ Date: ${survey.date}`
         {
           text: "Delete",
           style: "destructive",
-          onPress: () => {
-            setSurveys((prev) => prev.filter((item) => item.id !== id));
+          onPress: async () => {
+            const updated = surveys.filter(
+              (item) => item.surveyId !== surveyId
+            );
+
+            setSurveys(updated);
+
+            await AsyncStorage.setItem(
+              "surveys",
+              JSON.stringify(updated)
+            );
           },
         },
       ]
@@ -127,7 +111,7 @@ Date: ${survey.date}`
 
       <TextInput
         style={styles.searchInput}
-        placeholder="Search by Site or Client"
+        placeholder="Search by Survey ID, Site or Client"
         value={search}
         onChangeText={setSearch}
       />
@@ -156,15 +140,40 @@ Date: ${survey.date}`
 
       <FlatList
         data={filteredSurveys}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item.surveyId}
         showsVerticalScrollIndicator={false}
+        ListEmptyComponent={() => (
+          <Text style={styles.emptyText}>
+            No surveys found.
+          </Text>
+        )}
         renderItem={({ item }) => (
           <View style={styles.card}>
             <View style={styles.info}>
-              <Text style={styles.site}>{item.site}</Text>
-              <Text style={styles.text}>Client: {item.client}</Text>
-              <Text style={styles.text}>Priority: {item.priority}</Text>
-              <Text style={styles.text}>Date: {item.date}</Text>
+              <Text style={styles.site}>
+                {item.siteName}
+              </Text>
+
+              <Text style={styles.text}>
+                Survey ID: {item.surveyId}
+              </Text>
+
+              <Text style={styles.text}>
+                Client: {item.client}
+              </Text>
+
+              <Text style={styles.text}>
+                Contact: {item.contact}
+              </Text>
+
+              <Text style={styles.text}>
+                Priority: {item.priority}
+              </Text>
+
+              <Text style={styles.text}>
+                Date:{" "}
+                {new Date(item.date).toLocaleDateString()}
+              </Text>
             </View>
 
             <View>
@@ -172,14 +181,20 @@ Date: ${survey.date}`
                 style={styles.viewButton}
                 onPress={() => viewSurvey(item)}
               >
-                <Text style={styles.buttonText}>View</Text>
+                <Text style={styles.buttonText}>
+                  View
+                </Text>
               </Pressable>
 
               <Pressable
                 style={styles.deleteButton}
-                onPress={() => deleteSurvey(item.id)}
+                onPress={() =>
+                  deleteSurvey(item.surveyId)
+                }
               >
-                <Text style={styles.buttonText}>Delete</Text>
+                <Text style={styles.buttonText}>
+                  Delete
+                </Text>
               </Pressable>
             </View>
           </View>
@@ -248,7 +263,6 @@ const styles = StyleSheet.create({
   card: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
     backgroundColor: "#fff",
     borderRadius: 12,
     padding: 15,
@@ -258,19 +272,20 @@ const styles = StyleSheet.create({
 
   info: {
     flex: 1,
+    marginRight: 12,
   },
 
   site: {
     fontSize: 18,
     fontWeight: "bold",
     color: "#222",
-    marginBottom: 5,
+    marginBottom: 8,
   },
 
   text: {
     fontSize: 14,
     color: "#555",
-    marginBottom: 2,
+    marginBottom: 4,
   },
 
   viewButton: {
@@ -293,5 +308,12 @@ const styles = StyleSheet.create({
   buttonText: {
     color: "#fff",
     fontWeight: "600",
+  },
+
+  emptyText: {
+    textAlign: "center",
+    marginTop: 50,
+    fontSize: 16,
+    color: "#777",
   },
 });
