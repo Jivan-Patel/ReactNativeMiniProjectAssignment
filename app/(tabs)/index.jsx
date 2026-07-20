@@ -1,10 +1,12 @@
 import { View, Text, StyleSheet, Pressable, FlatList, ScrollView } from 'react-native'
-import React from 'react'
+import React, { useCallback, useState } from 'react'
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { DrawerActions } from "@react-navigation/native";
 import { useNavigation } from "expo-router";
 import { MaterialIcons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { useFocusEffect } from "@react-navigation/native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const HomeScreen = () => {
   const navigation = useNavigation();
@@ -107,6 +109,30 @@ const HomeScreen = () => {
     ],
   };
 
+  const [recentSurveys, setRecentSurveys] = useState([]);
+
+  const loadSurvey = async () => {
+    try {
+      const storedSurvey = await AsyncStorage.getItem("surveys");
+      if (storedSurvey) {
+        const parsedSurvey = JSON.parse(storedSurvey);
+
+        setRecentSurveys(parsedSurvey.reverse().slice(0, 5));
+      }
+    } catch (error) {
+      console.error("Error loading survey:", error);
+    }
+  }
+
+  useFocusEffect(
+    useCallback(() => {
+      loadSurvey();
+    }, [])
+  );
+
+
+
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -174,18 +200,56 @@ const HomeScreen = () => {
         <View>
           <Text style={[{ paddingLeft: 20 }, styles.sectionTitle]}>Recent Survey</Text>
           <FlatList
-            data={data.recentSurveys}
+            data={recentSurveys}
             keyExtractor={(item) => item.id}
             scrollEnabled={false}
             renderItem={({ item }) => (
               <View style={styles.surveyCard}>
-                <Text style={styles.site}>{item.siteName}</Text>
-                <Text>{item.client}</Text>
-                <Text>{item.priority}</Text>
-                <Text>{item.status}</Text>
-                <Text>{item.date}</Text>
+                <View style={styles.surveyHeader}>
+                  <Text style={styles.site}>{item.siteName}</Text>
+
+                  <View
+                    style={[
+                      styles.priorityBadge,
+                      item.priority === "High"
+                        ? styles.highPriority
+                        : item.priority === "Medium"
+                          ? styles.mediumPriority
+                          : styles.lowPriority,
+                    ]}
+                  >
+                    <Text style={styles.priorityText}>
+                      {item.priority}
+                    </Text>
+                  </View>
+                </View>
+
+                <Text style={styles.info}>
+                  Survey ID: {item.surveyId}
+                </Text>
+
+                <Text style={styles.info}>
+                  Client: {item.client}
+                </Text>
+
+                <Text style={styles.info}>
+                  Contact: {item.contact}
+                </Text>
+
+                <Text style={styles.info} numberOfLines={1}>
+                  📍 {item.location}
+                </Text>
+
+                <Text style={styles.date}>
+                  {new Date(item.date).toLocaleDateString("en-GB", {
+                    day: "2-digit",
+                    month: "short",
+                    year: "numeric",
+                  })}
+                </Text>
               </View>
             )}
+
           />
         </View>
       </ScrollView>
@@ -319,6 +383,49 @@ const styles = StyleSheet.create({
     color: "#222",
     marginBottom: 5,
   },
+
+  surveyHeader: {
+  flexDirection: "row",
+  justifyContent: "space-between",
+  alignItems: "center",
+  marginBottom: 10,
+},
+
+info: {
+  fontSize: 14,
+  color: "#555",
+  marginBottom: 4,
+},
+
+date: {
+  marginTop: 10,
+  fontSize: 13,
+  color: "#888",
+},
+
+priorityBadge: {
+  paddingHorizontal: 10,
+  paddingVertical: 4,
+  borderRadius: 20,
+},
+
+highPriority: {
+  backgroundColor: "#FEE2E2",
+},
+
+mediumPriority: {
+  backgroundColor: "#FEF3C7",
+},
+
+lowPriority: {
+  backgroundColor: "#DCFCE7",
+},
+
+priorityText: {
+  fontSize: 12,
+  fontWeight: "700",
+  color: "#111827",
+},
 });
 
 export default HomeScreen
