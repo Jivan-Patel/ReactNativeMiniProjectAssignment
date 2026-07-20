@@ -2,16 +2,19 @@ import { View, Text, TextInput, StyleSheet, Pressable, Alert, ScrollView } from 
 import React, { useState } from 'react'
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useEffect } from 'react';
+import { useFocusEffect } from "@react-navigation/native";
+import { useEffect, useCallback } from 'react';
+
 import * as Location from 'expo-location';
 
 
 const CreateSurveyScreen = () => {
   const [location, setLocation] = useState(null);
   const [address, setAddress] = useState(null);
+  const [surveys, setSurveys] = useState([]);
 
   const survey = {
-    surveyId: "SUR-105",
+    surveyId: "SUR-001",
     siteName: "",
     client: "",
     contact: "",
@@ -20,17 +23,6 @@ const CreateSurveyScreen = () => {
     priority: "Medium",
     date: new Date(),
   };
-
-  //  const survey = {
-  //   surveyId: "SUR-001",
-  //   siteName: "AS Construction Site",
-  //   client: "Aditya Patel",
-  //   contact: "7896598976",
-  //   location: "Kalol, Gujarat",
-  //   notes: "Raste ka plot saste me",
-  //   photo: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRo62nXWlex-jhZQywWDtOOxLzIcUgR7HnI6pNKYNO73g&s=10",
-  //   data : ""
-  // };
 
   const priorityOptions = [
     {
@@ -61,6 +53,32 @@ const CreateSurveyScreen = () => {
     month: "long",
     year: "numeric",
   });
+
+  
+  useFocusEffect(
+    useCallback(() => {
+      const fetchSurveys = async () => {
+        try {
+          const storedSurveys = await AsyncStorage.getItem("surveys");
+
+          if (storedSurveys) {
+            const parsed = JSON.parse(storedSurveys);
+            setSurveys(parsed);
+            setData({
+              ...survey,
+              surveyId: `SUR-${parsed.length + 1}`,
+            });
+          } else {
+            setSurveys([]);
+          }
+        } catch (error) {
+          console.log(error);
+        }
+      };
+
+      fetchSurveys();
+    }, [])
+  );
 
   const handleSubmit = async () => {
     if (!data.siteName.trim()) {
