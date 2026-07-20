@@ -1,32 +1,60 @@
-import {
-  View,
-  Text,
-  StyleSheet,
-  Image,
-  Pressable,
-  Alert,
-  ScrollView,
-} from "react-native";
-import React from "react";
+import { View, Text, StyleSheet, Image, Pressable, Alert, ScrollView } from "react-native";
+import React, { useEffect, useState, useCallback } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useFocusEffect } from "@react-navigation/native";
+
 
 const SurveyPreview = () => {
-  const survey = {
-    surveyId: "SUR-001",
-    siteDetails: "AS Construction Site",
-    client: "Aditya Patel",
-    contact: "7896598976",
-    location: "Kalol, Gujarat",
-    notes: "Raste ka plot saste me",
-    photo: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRo62nXWlex-jhZQywWDtOOxLzIcUgR7HnI6pNKYNO73g&s=10",
-  };
+  const [survey, setSurvey] = useState(null);
+
+  const getPreview = async () => {
+    try {
+      const preview = await AsyncStorage.getItem("currentSurvey");
+      if (preview) {
+        const temp = JSON.parse(preview);
+
+        setSurvey({
+          ...temp,
+          photo: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRo62nXWlex-jhZQywWDtOOxLzIcUgR7HnI6pNKYNO73g&s=10"
+        });
+      }
+    }
+    catch (err) {
+      console.log(err);
+    }
+  }
+
+  useFocusEffect(
+    useCallback(() => {
+      getPreview();
+    }, [])
+  );
 
   const editSurvey = () => {
     Alert.alert("Edit Survey", "Navigate to the Create Survey screen.");
   };
 
-  const submitSurvey = () => {
+  const submitSurvey = async () => {
+    const existingSurveys = await AsyncStorage.getItem("surveys");
+    let surveys = existingSurveys ? JSON.parse(existingSurveys) : [];
+    surveys.push(survey);
+    await AsyncStorage.setItem("surveys", JSON.stringify(surveys));
+
+    await AsyncStorage.removeItem("currentSurvey");
+    setSurvey(null);
+
     Alert.alert("Success", "Survey submitted successfully!");
   };
+
+  if (!survey) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.heading}>Survey Preview</Text>
+        <Text>No survey available.</Text>
+      </View>
+    );
+  }
+
 
   return (
     <ScrollView style={styles.container}>
@@ -42,10 +70,9 @@ const SurveyPreview = () => {
           <Text style={styles.label}>Survey ID</Text>
           <Text style={styles.value}>{survey.surveyId}</Text>
         </View>
-
         <View style={styles.item}>
           <Text style={styles.label}>Site Details</Text>
-          <Text style={styles.value}>{survey.siteDetails}</Text>
+          <Text style={styles.value}>{survey.siteName}</Text>
         </View>
 
         <View style={styles.item}>
@@ -84,6 +111,7 @@ const SurveyPreview = () => {
           <Text style={styles.buttonText}>Submit Survey</Text>
         </Pressable>
       </View>
+
     </ScrollView>
   );
 };
